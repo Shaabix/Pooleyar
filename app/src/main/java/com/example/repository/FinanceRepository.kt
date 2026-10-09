@@ -171,6 +171,48 @@ class FinanceRepository(private val db: AppDatabase) {
         }
     }
 
+    suspend fun saveAccountWithCard(account: AccountEntity, cardNumber: String = "", existingCardId: Long? = null): Long {
+        return db.withTransaction {
+            val accId = if (account.id == 0L) db.accountDao().insertAccount(account)
+            else {
+                db.accountDao().updateAccount(account)
+                account.id
+            }
+            if (cardNumber.isNotBlank()) {
+                val existingCards = db.accountDao().getCardsForAccountSync(accId)
+                // If existingCardId is provided, validate it belongs to this account; otherwise fallback to first existing card
+                val targetCard = if (existingCardId != null && existingCardId != 0L) {
+                    val found = db.accountDao().getCardById(existingCardId)
+                    require(found != null && found.accountId == accId) {
+                        "Card does not exist or does not belong to this account"
+                    }
+                    found
+                } else {
+                    existingCards.firstOrNull()
+                }
+
+                if (targetCard != null) {
+                    // Update existing card while strictly preserving expiryMonth, expiryYear, notes
+                    val updatedCard = targetCard.copy(
+                        cardHolderName = account.name,
+                        cardNumber = cardNumber,
+                        bankId = account.bankId
+                    )
+                    db.accountDao().updateCard(updatedCard)
+                } else {
+                    val newCard = BankCardEntity(
+                        accountId = accId,
+                        cardHolderName = account.name,
+                        cardNumber = cardNumber,
+                        bankId = account.bankId
+                    )
+                    db.accountDao().insertCard(newCard)
+                }
+            }
+            accId
+        }
+    }
+
     suspend fun deleteAccount(account: AccountEntity) = db.accountDao().deleteAccount(account)
 
     suspend fun saveCard(card: BankCardEntity): Long = db.accountDao().insertCard(card)
@@ -267,7 +309,13 @@ class FinanceRepository(private val db: AppDatabase) {
 
     suspend fun deleteCheck(check: CheckEntity) = db.checkDao().deleteCheck(check)
 
-    suspend fun saveBudget(budget: BudgetEntity): Long = db.budgetDao().insertBudget(budget)
+    suspend fun saveBudget(budget: BudgetEntity): Long {
+        return if (budget.id == 0L) db.budgetDao().insertBudget(budget)
+        else {
+            db.budgetDao().updateBudget(budget)
+            budget.id
+        }
+    }
 
     suspend fun deleteBudget(budget: BudgetEntity) = db.budgetDao().deleteBudget(budget)
 

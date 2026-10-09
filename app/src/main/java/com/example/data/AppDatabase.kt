@@ -82,8 +82,13 @@ abstract class AppDatabase : RoomDatabase() {
                 CategoryEntity(name = "سایر درآمدها", type = "INCOME", iconName = "account_balance_wallet", colorHex = 0xFF66BB6A, isDefault = true)
             )
             database.categoryDao().insertAll(defaultCategories)
+        }
 
-            // Seed initial default accounts
+        /**
+         * Opt-in demo data generator (disabled by default).
+         * Can be called only when the user explicitly requests sample/demo data.
+         */
+        suspend fun seedDemoData(database: AppDatabase) {
             val initialAccountMellat = AccountEntity(
                 name = "حساب جاری ملت",
                 type = "BANK",

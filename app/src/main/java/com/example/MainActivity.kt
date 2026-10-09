@@ -277,8 +277,9 @@ fun PooleyarApp(viewModel: FinanceViewModel) {
                         accounts = accounts,
                         userSettings = uiState.userSettings,
                         windowSizeInfo = windowSizeInfo,
-                        onSaveAccount = { acc, card -> viewModel.saveAccount(acc, card) },
-                        onDeleteAccount = { acc -> viewModel.deleteAccount(acc) }
+                        onSaveAccount = { acc, card, cardId -> viewModel.saveAccount(acc, card, cardId) },
+                        onDeleteAccount = { acc -> viewModel.deleteAccount(acc) },
+                        onAddCustomBank = { name -> viewModel.addCustomBank(nameFa = name, nameEn = name) }
                     )
                     "debts_checks" -> DebtsAndChecksScreen(
                         debts = debts,
@@ -301,7 +302,7 @@ fun PooleyarApp(viewModel: FinanceViewModel) {
                         selectedJalaliYear = uiState.selectedJalaliYear,
                         selectedJalaliMonth = uiState.selectedJalaliMonth,
                         windowSizeInfo = windowSizeInfo,
-                        onSaveBudget = { catId, limit, year, month -> viewModel.saveBudget(catId, limit, year, month) },
+                        onSaveBudget = { id, catId, limit, year, month -> viewModel.saveBudget(id, catId, limit, year, month) },
                         onDeleteBudget = { b -> viewModel.deleteBudget(b) }
                     )
                     "recurring" -> RecurringTransactionsScreen(

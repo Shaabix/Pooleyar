@@ -75,6 +75,8 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         )
 
     init {
+        // Load persisted custom banks
+        IranianBanks.setCustomBanks(prefs.getCustomBanks())
         viewModelScope.launch {
             repository.executeDueRecurringTransactions()
         }
@@ -201,20 +203,16 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun saveAccount(account: AccountEntity, cardNumber: String = "") {
+    fun saveAccount(account: AccountEntity, cardNumber: String = "", existingCardId: Long? = null) {
         viewModelScope.launch {
-            val accId = repository.saveAccount(account)
-            if (cardNumber.isNotBlank()) {
-                repository.saveCard(
-                    BankCardEntity(
-                        accountId = accId,
-                        cardHolderName = account.name,
-                        cardNumber = cardNumber,
-                        bankId = account.bankId
-                    )
-                )
-            }
+            repository.saveAccountWithCard(account, cardNumber, existingCardId)
         }
+    }
+
+    fun addCustomBank(nameFa: String, nameEn: String = nameFa): IranianBank {
+        val bank = IranianBanks.addCustomBank(nameFa = nameFa, nameEn = nameEn)
+        prefs.saveCustomBank(bank)
+        return bank
     }
 
     fun deleteAccount(account: AccountEntity) {
@@ -259,9 +257,10 @@ class FinanceViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun saveBudget(categoryId: Long, monthlyLimit: Long, year: Int, month: Int) {
+    fun saveBudget(id: Long = 0L, categoryId: Long, monthlyLimit: Long, year: Int, month: Int) {
         viewModelScope.launch {
             val budget = BudgetEntity(
+                id = id,
                 categoryId = categoryId,
                 monthlyLimit = monthlyLimit,
                 jalaliYear = year,

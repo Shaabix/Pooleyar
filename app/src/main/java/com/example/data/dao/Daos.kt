@@ -25,8 +25,14 @@ interface AccountDao {
     suspend fun deleteAccount(account: AccountEntity)
 
     // Cards
+    @Query("SELECT * FROM cards WHERE id = :id")
+    suspend fun getCardById(id: Long): BankCardEntity?
+
     @Query("SELECT * FROM cards WHERE accountId = :accountId")
     fun getCardsForAccount(accountId: Long): Flow<List<BankCardEntity>>
+
+    @Query("SELECT * FROM cards WHERE accountId = :accountId")
+    suspend fun getCardsForAccountSync(accountId: Long): List<BankCardEntity>
 
     @Query("SELECT * FROM cards")
     fun getAllCards(): Flow<List<BankCardEntity>>
@@ -36,6 +42,9 @@ interface AccountDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllCards(cards: List<BankCardEntity>)
+
+    @Update
+    suspend fun updateCard(card: BankCardEntity)
 
     @Delete
     suspend fun deleteCard(card: BankCardEntity)
@@ -111,6 +120,9 @@ interface BudgetDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllBudgets(budgets: List<BudgetEntity>)
+
+    @Update
+    suspend fun updateBudget(budget: BudgetEntity)
 
     @Delete
     suspend fun deleteBudget(budget: BudgetEntity)

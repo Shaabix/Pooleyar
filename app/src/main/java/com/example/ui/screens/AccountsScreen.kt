@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.entity.AccountEntity
 import com.example.model.AccountType
 import com.example.model.AppLanguage
+import com.example.model.IranianBank
 import com.example.model.IranianBanks
 import com.example.model.UserSettings
 import com.example.repository.AccountWithBalance
@@ -34,8 +35,9 @@ fun AccountsScreen(
     accounts: List<AccountWithBalance>,
     userSettings: UserSettings,
     windowSizeInfo: WindowSizeInfo,
-    onSaveAccount: (AccountEntity, String) -> Unit,
-    onDeleteAccount: (AccountEntity) -> Unit
+    onSaveAccount: (AccountEntity, String, Long?) -> Unit,
+    onDeleteAccount: (AccountEntity) -> Unit,
+    onAddCustomBank: (String) -> IranianBank = { name -> IranianBanks.addCustomBank(name) }
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var accountToEdit by remember { mutableStateOf<AccountWithBalance?>(null) }
@@ -50,8 +52,9 @@ fun AccountsScreen(
                 showAddDialog = false
                 accountToEdit = null
             },
-            onConfirm = { account, cardNum ->
-                onSaveAccount(account, cardNum)
+            onAddCustomBank = onAddCustomBank,
+            onConfirm = { account, cardNum, existingCardId ->
+                onSaveAccount(account, cardNum, existingCardId)
                 showAddDialog = false
                 accountToEdit = null
             }
@@ -86,7 +89,7 @@ fun AccountsScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (lang == AppLanguage.PERSIAN) "مدیریت حساب‌های بانکی، کارت‌ها و کیف‌های پول نقدی" else "Manage your bank accounts, credit cards, and cash wallets",
+                    text = AppStrings.get("manage_accounts_subtitle", lang),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -254,7 +257,8 @@ private fun AddOrEditAccountDialog(
     accountToEdit: AccountWithBalance?,
     userSettings: UserSettings,
     onDismissRequest: () -> Unit,
-    onConfirm: (AccountEntity, String) -> Unit
+    onAddCustomBank: (String) -> IranianBank,
+    onConfirm: (AccountEntity, String, Long?) -> Unit
 ) {
     val lang = userSettings.language
     val isEdit = accountToEdit != null
@@ -265,7 +269,9 @@ private fun AddOrEditAccountDialog(
         mutableStateOf(existing?.type?.let { AccountType.valueOf(it) } ?: AccountType.BANK)
     }
     var selectedBankId by remember { mutableStateOf(existing?.bankId ?: "mellat") }
-    var initialBalanceInput by remember { mutableStateOf(existing?.initialBalance?.toString() ?: "") }
+    var initialBalanceInput by remember {
+        mutableStateOf(existing?.let { CurrencyFormatter.amountForInput(it.initialBalance, userSettings.currency) } ?: "")
+    }
     var accountNumber by remember { mutableStateOf(existing?.accountNumber ?: "") }
     var shebaNumber by remember { mutableStateOf(existing?.shebaNumber ?: "") }
     var cardNumber by remember { mutableStateOf(accountToEdit?.cards?.firstOrNull()?.cardNumber ?: "") }
@@ -282,7 +288,7 @@ private fun AddOrEditAccountDialog(
             confirmButton = {
                 Button(onClick = {
                     if (customBankNameInput.isNotBlank()) {
-                        val newBank = IranianBanks.addCustomBank(nameFa = customBankNameInput.trim(), nameEn = customBankNameInput.trim())
+                        val newBank = onAddCustomBank(customBankNameInput.trim())
                         selectedBankId = newBank.id
                         showAddCustomBankDialog = false
                     }
@@ -319,7 +325,7 @@ private fun AddOrEditAccountDialog(
             Button(
                 onClick = {
                     if (name.isBlank()) {
-                        errorMessage = if (lang == AppLanguage.PERSIAN) "لطفاً نام حساب را وارد کنید" else "Please enter account name"
+                        errorMessage = AppStrings.get("account_name_error", lang)
                         return@Button
                     }
                     val initialBal = CurrencyFormatter.parseAmount(initialBalanceInput, userSettings.currency)
@@ -331,10 +337,11 @@ private fun AddOrEditAccountDialog(
                         bankId = if (accountType == AccountType.BANK) selectedBankId else null,
                         accountNumber = accountNumber.trim(),
                         shebaNumber = shebaNumber.trim(),
-                        initialBalance = if (isEdit) existing!!.initialBalance else initialBal,
+                        initialBalance = initialBal,
                         colorHex = bankObj?.primaryColorHex ?: existing?.colorHex ?: 0xFF0D47A1
                     )
-                    onConfirm(acc, cardNumber.trim())
+                    val existingCardId = accountToEdit?.cards?.firstOrNull()?.id
+                    onConfirm(acc, cardNumber.trim(), existingCardId)
                 }
             ) {
                 Text(if (isEdit) AppStrings.get("edit", lang) else AppStrings.get("confirm", lang))
@@ -418,17 +425,15 @@ private fun AddOrEditAccountDialog(
                     )
                 }
 
-                if (!isEdit) {
-                    OutlinedTextField(
-                        value = initialBalanceInput,
-                        onValueChange = { initialBalanceInput = it },
-                        label = { Text("${AppStrings.get("initial_balance", lang)} (${userSettings.currency.titleFa})") },
-                        placeholder = { Text("۰") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
-                }
+                OutlinedTextField(
+                    value = initialBalanceInput,
+                    onValueChange = { initialBalanceInput = it },
+                    label = { Text("${AppStrings.get("initial_balance", lang)} (${userSettings.currency.titleFa})") },
+                    placeholder = { Text("۰") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
 
                 if (errorMessage != null) {
                     Text(errorMessage!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)

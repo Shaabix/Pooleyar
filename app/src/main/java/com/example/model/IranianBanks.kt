@@ -41,12 +41,23 @@ object IranianBanks {
     private val customBanks = mutableListOf<IranianBank>()
 
     val all: List<IranianBank>
-        get() = defaultList + customBanks
+        get() = synchronized(customBanks) { defaultList + customBanks.toList() }
+
+    fun getCustomBanks(): List<IranianBank> = synchronized(customBanks) { customBanks.toList() }
+
+    fun setCustomBanks(banks: List<IranianBank>) {
+        synchronized(customBanks) {
+            customBanks.clear()
+            customBanks.addAll(banks)
+        }
+    }
 
     fun addCustomBank(nameFa: String, nameEn: String = nameFa, cardPrefix: String = "", colorHex: Long = 0xFF00897B): IranianBank {
         val id = "custom_" + System.currentTimeMillis()
         val bank = IranianBank(id, nameFa, nameEn, cardPrefix, colorHex, isCustom = true)
-        customBanks.add(bank)
+        synchronized(customBanks) {
+            customBanks.add(bank)
+        }
         return bank
     }
 

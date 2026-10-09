@@ -110,7 +110,15 @@ object AppStrings {
         "edit_budget" to "ویرایش بودجه",
         "recurring_title" to "عنوان دوره",
         "recurring_frequency" to "فاصله تکرار",
-        "day_of_month" to "روز موعد در هر ماه"
+        "day_of_month" to "روز موعد در هر ماه",
+        "add_recurring" to "تعریف تراکنش دوره‌ای جدید",
+        "save_recurring" to "ثبت دوره",
+        "recurring_title_hint" to "عنوان (مثلاً اجاره خانه، واریز حقوق)",
+        "invalid_amount_error" to "لطفاً مبلغ معتبری وارد کنید",
+        "select_account_error" to "لطفاً حساب مبدا را انتخاب کنید",
+        "transfer_same_account_error" to "حساب مبدا و مقصد نمی‌تواند یکسان باشد",
+        "account_name_error" to "لطفاً نام حساب را وارد کنید",
+        "manage_accounts_subtitle" to "مدیریت حساب‌های بانکی، کارت‌ها و کیف‌های پول نقدی"
     )
 
     private val EN = mapOf(
@@ -214,6 +222,14 @@ object AppStrings {
         "edit_budget" to "Edit Budget",
         "recurring_title" to "Recurring Title",
         "recurring_frequency" to "Frequency",
-        "day_of_month" to "Day of Month"
+        "day_of_month" to "Day of Month",
+        "add_recurring" to "Add Recurring Transaction",
+        "save_recurring" to "Save Recurring",
+        "recurring_title_hint" to "Title (e.g. Rent, Salary)",
+        "invalid_amount_error" to "Please enter a valid amount",
+        "select_account_error" to "Please select a source account",
+        "transfer_same_account_error" to "Source and destination accounts must be different",
+        "account_name_error" to "Please enter account name",
+        "manage_accounts_subtitle" to "Manage bank accounts, credit cards, and cash wallets"
     )
 }

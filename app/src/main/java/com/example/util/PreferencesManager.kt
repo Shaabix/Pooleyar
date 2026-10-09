@@ -84,4 +84,57 @@ class PreferencesManager(context: Context) {
     fun saveAppLock(enabled: Boolean, pin: String) {
         prefs.edit().putBoolean("app_lock", enabled).putString("pin", pin).apply()
     }
+
+    fun getCustomBanks(): List<IranianBank> {
+        val raw = prefs.getString("custom_banks_json", null) ?: return emptyList()
+        if (raw.isBlank()) return emptyList()
+        val list = mutableListOf<IranianBank>()
+        try {
+            val jsonArray = org.json.JSONArray(raw)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.optJSONObject(i) ?: continue
+                val id = obj.optString("id", "")
+                val nameFa = obj.optString("nameFa", "")
+                if (id.isBlank() || nameFa.isBlank()) continue
+                list.add(
+                    IranianBank(
+                        id = id,
+                        nameFa = nameFa,
+                        nameEn = obj.optString("nameEn", nameFa),
+                        cardPrefix = obj.optString("cardPrefix", ""),
+                        primaryColorHex = obj.optLong("primaryColorHex", 0xFF00897BL),
+                        isCustom = true
+                    )
+                )
+            }
+        } catch (_: Exception) {
+            // Malformed JSON should return emptyList without throwing, preserving preference integrity
+            return emptyList()
+        }
+        return list
+    }
+
+    fun saveCustomBank(bank: IranianBank) {
+        if (bank.id.isBlank() || bank.nameFa.isBlank()) return
+        val current = getCustomBanks().toMutableList()
+        current.removeAll { it.id == bank.id }
+        current.add(bank)
+        saveAllCustomBanks(current)
+    }
+
+    fun saveAllCustomBanks(banks: List<IranianBank>) {
+        val jsonArray = org.json.JSONArray()
+        for (b in banks) {
+            if (b.id.isBlank() || b.nameFa.isBlank()) continue
+            val obj = org.json.JSONObject()
+            obj.put("id", b.id)
+            obj.put("nameFa", b.nameFa)
+            obj.put("nameEn", b.nameEn)
+            obj.put("cardPrefix", b.cardPrefix)
+            obj.put("primaryColorHex", b.primaryColorHex)
+            obj.put("isCustom", true)
+            jsonArray.put(obj)
+        }
+        prefs.edit().putString("custom_banks_json", jsonArray.toString()).apply()
+    }
 }

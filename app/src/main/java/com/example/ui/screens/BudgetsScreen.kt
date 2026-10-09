@@ -43,7 +43,7 @@ fun BudgetsScreen(
     selectedJalaliYear: Int,
     selectedJalaliMonth: Int,
     windowSizeInfo: WindowSizeInfo,
-    onSaveBudget: (Long, Long, Int, Int) -> Unit,
+    onSaveBudget: (Long, Long, Long, Int, Int) -> Unit,
     onDeleteBudget: (BudgetEntity) -> Unit
 ) {
     var showAddBudgetDialog by remember { mutableStateOf(false) }
@@ -73,7 +73,7 @@ fun BudgetsScreen(
                 budgetToEdit = null
             },
             onConfirm = { catId, limit ->
-                onSaveBudget(catId, limit, selectedJalaliYear, selectedJalaliMonth)
+                onSaveBudget(budgetToEdit?.id ?: 0L, catId, limit, selectedJalaliYear, selectedJalaliMonth)
                 showAddBudgetDialog = false
                 budgetToEdit = null
             }
@@ -225,7 +225,9 @@ private fun AddOrEditBudgetDialog(
     val lang = userSettings.language
     val isEdit = budgetToEdit != null
     var selectedCategoryId by remember { mutableStateOf(budgetToEdit?.categoryId ?: expenseCategories.firstOrNull()?.id ?: 0L) }
-    var limitInput by remember { mutableStateOf(budgetToEdit?.monthlyLimit?.toString() ?: "") }
+    var limitInput by remember {
+        mutableStateOf(budgetToEdit?.let { CurrencyFormatter.amountForInput(it.monthlyLimit, userSettings.currency) } ?: "")
+    }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
